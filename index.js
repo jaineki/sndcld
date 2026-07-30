@@ -1,6 +1,3 @@
-// index.js - Main server file for Jay Bohol SoundCloud Music
-// Secure Express.js backend with comprehensive security measures
-
 require('dotenv').config();
 const express = require('express');
 const helmet = require('helmet');
@@ -55,7 +52,7 @@ app.use(helmet({
 // 3. Strict CORS configuration
 const allowedOrigins = process.env.ALLOWED_ORIGINS 
     ? process.env.ALLOWED_ORIGINS.split(',') 
-    : ['http://localhost:3000', 'http://localhost:8080'];
+    : ['http://localhost:3000', 'https://jayspotifyweb.onrender.com/'];
 
 app.use(cors({
     origin: function(origin, callback) {
