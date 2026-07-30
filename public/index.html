@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secured SoundCloud Search</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { background: #121212; color: #ffffff; }
+        .glass { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .sc-orange { color: #ff5500; }
+        .sc-bg-orange { background-color: #ff5500; }
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-8">
+    <div class="max-w-4xl mx-auto">
+        <!-- Login Section -->
+        <div id="loginSection" class="glass p-6 rounded-2xl mb-8">
+            <h2 class="text-xl font-bold mb-4">Login to Access API</h2>
+            <div class="flex flex-col md:flex-row gap-4">
+                <input type="text" id="username" placeholder="Username (admin)" class="flex-1 bg-black/40 border border-white/10 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500">
+                <input type="password" id="password" placeholder="Password (password)" class="flex-1 bg-black/40 border border-white/10 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500">
+                <button onclick="login()" class="sc-bg-orange hover:bg-orange-600 text-white font-bold py-2 px-6 rounded-xl transition-all">Login</button>
+            </div>
+            <p id="loginStatus" class="mt-2 text-sm text-red-400"></p>
+        </div>
+
+        <!-- Main Content (Hidden until login) -->
+        <div id="mainContent" class="hidden">
+            <header class="text-center mb-10">
+                <h1 class="text-4xl font-bold mb-2">
+                    <i class="fab fa-soundcloud sc-orange"></i> SoundCloud <span class="text-gray-400">Search</span>
+                </h1>
+                <p class="text-gray-400">Search and download your favorite tracks (Secured via JWT)</p>
+                <button onclick="logout()" class="mt-4 text-sm text-gray-500 hover:text-white underline">Logout</button>
+            </header>
+
+            <!-- Search Bar -->
+            <div class="glass p-6 rounded-2xl mb-8">
+                <div class="flex flex-col md:flex-row gap-4">
+                    <input type="text" id="searchInput" placeholder="Enter song name or artist..." class="flex-1 bg-black/40 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all">
+                    <button onclick="searchSongs()" id="searchBtn" class="sc-bg-orange hover:bg-orange-600 text-white font-bold py-3 px-8 rounded-xl transition-all flex items-center justify-center gap-2">
+                        <i class="fas fa-search"></i> Search
+                    </button>
+                </div>
+            </div>
+
+            <!-- Loading Spinner -->
+            <div id="loading" class="hidden text-center py-10">
+                <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-orange-500 border-t-transparent"></div>
+                <p class="mt-4 text-gray-400">Fetching tracks...</p>
+            </div>
+
+            <!-- Results Section -->
+            <div id="results" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+        </div>
+
+        <!-- Player Modal -->
+        <div id="playerContainer" class="fixed bottom-0 left-0 right-0 p-4 bg-black/90 border-t border-white/10 transform translate-y-full transition-transform duration-300 z-50">
+            <div class="max-w-4xl mx-auto flex flex-col md:flex-row items-center gap-4">
+                <div class="flex items-center gap-4 flex-1">
+                    <img id="playerThumb" src="" alt="" class="w-12 h-12 rounded-lg object-cover">
+                    <div class="overflow-hidden">
+                        <h3 id="playerTitle" class="font-bold truncate"></h3>
+                        <p id="playerAuthor" class="text-sm text-gray-400 truncate"></p>
+                    </div>
+                </div>
+                <audio id="audioPlayer" controls class="w-full md:w-2/3"></audio>
+                <button onclick="closePlayer()" class="text-gray-400 hover:text-white p-2">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let authToken = localStorage.getItem('authToken');
+
+        // Check if already logged in
+        if (authToken) {
+            document.getElementById('loginSection').classList.add('hidden');
+            document.getElementById('mainContent').classList.remove('hidden');
+        }
+
+        async function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const status = document.getElementById('loginStatus');
+
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                const data = await response.json();
+
+                if (response.ok) {
+                    authToken = data.accessToken;
+                    localStorage.setItem('authToken', authToken);
+                    document.getElementById('loginSection').classList.add('hidden');
+                    document.getElementById('mainContent').classList.remove('hidden');
+                } else {
+                    status.innerText = data.message || 'Login failed';
+                }
+            } catch (err) {
+                status.innerText = 'Error connecting to server';
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('authToken');
+            location.reload();
+        }
+
+        const searchInput = document.getElementById('searchInput');
+        const searchBtn = document.getElementById('searchBtn');
+        const resultsDiv = document.getElementById('results');
+        const loading = document.getElementById('loading');
+        const playerContainer = document.getElementById('playerContainer');
+        const audioPlayer = document.getElementById('audioPlayer');
+
+        searchInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') searchSongs(); });
+
+        async function searchSongs() {
+            const query = searchInput.value.trim();
+            if (!query) return;
+
+            resultsDiv.innerHTML = '';
+            loading.classList.remove('hidden');
+            searchBtn.disabled = true;
+
+            try {
+                const response = await fetch(`/api/search?query=${encodeURIComponent(query)}`, {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                
+                if (response.status === 401 || response.status === 403) {
+                    logout();
+                    return;
+                }
+
+                const data = await response.json();
+                if (data.succes && data.result && data.result.length > 0) {
+                    displayResults(data.result);
+                } else {
+                    resultsDiv.innerHTML = '<p class="col-span-full text-center text-gray-500 py-10">No results found.</p>';
+                }
+            } catch (error) {
+                resultsDiv.innerHTML = '<p class="col-span-full text-center text-red-400 py-10">Error fetching results.</p>';
+            } finally {
+                loading.classList.add('hidden');
+                searchBtn.disabled = false;
+            }
+        }
+
+        function displayResults(tracks) {
+            resultsDiv.innerHTML = tracks.map((track) => `
+                <div class="glass p-4 rounded-xl flex flex-col justify-between hover:bg-white/10 transition-all group">
+                    <div class="mb-4">
+                        <h3 class="font-bold text-lg mb-1 line-clamp-2">${track.title}</h3>
+                        <p class="text-xs text-gray-500 truncate">${track.url}</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="getDownloadInfo('${track.url}', this)" class="flex-1 bg-white/10 hover:bg-orange-500 text-white py-2 rounded-lg transition-all flex items-center justify-center gap-2">
+                            <i class="fas fa-play"></i> Play / Get Info
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function getDownloadInfo(link, btn) {
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner animate-spin"></i> Loading...';
+
+            try {
+                const response = await fetch(`/api/download?link=${encodeURIComponent(link)}`, {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                const data = await response.json();
+
+                if (data.success && data.result) {
+                    playTrack(data.result);
+                } else {
+                    alert('Could not retrieve download link.');
+                }
+            } catch (error) {
+                alert('Error fetching track details.');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        }
+
+        function playTrack(track) {
+            document.getElementById('playerThumb').src = track.thumbnail || 'https://via.placeholder.com/150';
+            document.getElementById('playerTitle').innerText = track.title;
+            document.getElementById('playerAuthor').innerText = track.author || 'Unknown Artist';
+            audioPlayer.src = track.downloadUrl;
+            playerContainer.classList.remove('translate-y-full');
+            audioPlayer.play();
+        }
+
+        function closePlayer() {
+            playerContainer.classList.add('translate-y-full');
+            audioPlayer.pause();
+        }
+    </script>
+</body>
+</html>
