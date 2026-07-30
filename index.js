@@ -11,7 +11,22 @@ const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(express.json());
-app.use(cors());
+
+// CORS Configuration - Restricting access to your website
+const allowedOrigins = ['https://searchmusic.gt.tc', 'http://searchmusic.gt.tc'];
+app.use(cors({
+    origin: function (origin, callback) {
+        // allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.indexOf(origin) === -1) {
+            var msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+            return callback(new Error(msg), false);
+        }
+        return callback(null, true);
+    },
+    credentials: true
+}));
+
 app.use(express.static('public'));
 
 // Session Configuration
@@ -41,7 +56,7 @@ app.post('/api/login', (req, res) => {
     const { username, password } = req.body;
 
     // In a real app, you'd verify against a database
-    if (username === 'admin' && password === 'password') {
+    if (username === 'admin' && password === 'selovasx2024') {
         const user = { name: username };
         const accessToken = jwt.sign(user, process.env.JWT_SECRET, { expiresIn: '1h' });
         
