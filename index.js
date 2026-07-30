@@ -1,7 +1,6 @@
 require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
-const jwt = require('jsonwebtoken');
 const axios = require('axios');
 const path = require('path');
 const cors = require('cors');
@@ -34,43 +33,11 @@ app.use(session({
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: true,
-    cookie: { secure: false } // Set to true if using HTTPS
+    cookie: { secure: false }
 }));
 
-// JWT Middleware to protect routes
-const authenticateToken = (req, res, next) => {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-
-    if (!token) return res.status(401).json({ message: 'Access Denied: No Token Provided' });
-
-    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
-        if (err) return res.status(403).json({ message: 'Invalid Token' });
-        req.user = user;
-        next();
-    });
-};
-
-// Login Route (Dummy for demonstration)
-app.post('/api/login', (req, res) => {
-    const { username, password } = req.body;
-
-    // In a real app, you'd verify against a database
-    if (username === 'admin' && password === 'selovasx2024') {
-        const user = { name: username };
-        const accessToken = jwt.sign(user, process.env.JWT_SECRET, { expiresIn: '1h' });
-        
-        // Also set session
-        req.session.user = user;
-        
-        res.json({ accessToken });
-    } else {
-        res.status(401).json({ message: 'Invalid credentials' });
-    }
-});
-
-// Secured SoundCloud Search Proxy
-app.get('/api/search', authenticateToken, async (req, res) => {
+// Secured SoundCloud Search Proxy (JWT removed as per request)
+app.get('/api/search', async (req, res) => {
     const { query } = req.query;
     if (!query) return res.status(400).json({ message: 'Query is required' });
 
@@ -87,8 +54,8 @@ app.get('/api/search', authenticateToken, async (req, res) => {
     }
 });
 
-// Secured SoundCloud Downloader Proxy
-app.get('/api/download', authenticateToken, async (req, res) => {
+// Secured SoundCloud Downloader Proxy (JWT removed as per request)
+app.get('/api/download', async (req, res) => {
     const { link } = req.query;
     if (!link) return res.status(400).json({ message: 'Link is required' });
 
