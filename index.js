@@ -9,15 +9,13 @@ const { initializeApp, cert } = require("firebase-admin/app");
 const { getFirestore } = require("firebase-admin/firestore");
 const { getAuth } = require("firebase-admin/auth");
 
+console.log("Firebase Admin:", require("firebase-admin/package.json").version);
+console.log("FIREBASE_SERVICE_ACCOUNT exists:", !!process.env.FIREBASE_SERVICE_ACCOUNT);
+
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 
-// Fix escaped newlines in the private key
-serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, "\n");
-
-initializeApp({
-  credential: cert(serviceAccount),
-  databaseURL: `https://${serviceAccount.project_id}.firebaseio.com`,
-});
+console.log("Project ID:", serviceAccount.project_id);
+console.log("Client Email:", serviceAccount.client_email);
 
 const db = getFirestore();
 const auth = getAuth();
