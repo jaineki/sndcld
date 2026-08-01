@@ -5,19 +5,20 @@ const axios = require('axios');
 const path = require('path');
 const cors = require('cors');
 const admin = require("firebase-admin");
-const { initializeApp, cert } = require("firebase-admin/app");
-const { getFirestore } = require("firebase-admin/firestore");
-const { getAuth } = require("firebase-admin/auth");
 
-console.log("FIREBASE_SERVICE_ACCOUNT exists:", !!process.env.FIREBASE_SERVICE_ACCOUNT);
+if (!process.env.FIREBASE_SERVICE_ACCOUNT) {
+    throw new Error("FIREBASE_SERVICE_ACCOUNT is missing.");
+}
 
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, "\n");
 
-console.log("Project ID:", serviceAccount.project_id);
-console.log("Client Email:", serviceAccount.client_email);
+admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+});
 
-const db = getFirestore();
-const auth = getAuth();
+const db = admin.firestore();
+const auth = admin.auth();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
