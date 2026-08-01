@@ -4,21 +4,23 @@ const session = require('express-session');
 const axios = require('axios');
 const path = require('path');
 const cors = require('cors');
-const admin = require('firebase-admin');
+const admin = require("firebase-admin");
+const { initializeApp, cert } = require("firebase-admin/app");
+const { getFirestore } = require("firebase-admin/firestore");
+const { getAuth } = require("firebase-admin/auth");
 
-// Initialize Firebase Admin
-// You should place your serviceAccountKey.json in the project root or set these env variables
-const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT 
-    ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT) 
-    : require('./serviceAccountKey.json');
+const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 
-admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
-    databaseURL: `https://${serviceAccount.project_id}.firebaseio.com`
+// Fix escaped newlines in the private key
+serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, "\n");
+
+initializeApp({
+  credential: cert(serviceAccount),
+  databaseURL: `https://${serviceAccount.project_id}.firebaseio.com`,
 });
 
-const db = admin.firestore();
-const auth = admin.auth();
+const db = getFirestore();
+const auth = getAuth();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
