@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Playlists - Jay SoundCloud</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { background: #0f0f0f; color: #ffffff; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.05); }
+        .sc-orange { color: #ff5500; }
+        .sc-bg-orange { background-color: #ff5500; }
+        .playlist-card:hover { background: rgba(255, 255, 255, 0.07); transform: translateY(-2px); }
+        
+        .mobile-nav { display: none; }
+        @media (max-width: 768px) {
+            .desktop-nav { display: none !important; }
+            .mobile-nav { display: flex; }
+        }
+        
+        .modal-overlay { background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(10px); }
+        .modal-input:focus { border-color: #ff5500; }
+        .fade-in { animation: fadeIn 0.3s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .touch-target { min-height: 44px; min-width: 44px; }
+        .spinner { border: 3px solid rgba(255, 85, 0, 0.2); border-top: 3px solid #ff5500; border-radius: 50%; width: 24px; height: 24px; animation: spin 0.8s linear infinite; display: inline-block; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        /* Toast */
+        .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 200; padding: 12px 20px; border-radius: 12px; font-size: 13px; font-weight: 700; }
+    </style>
+</head>
+<body class="min-h-screen pb-24 md:pb-32">
+    <!-- Mobile Header -->
+    <div class="mobile-nav fixed top-0 left-0 right-0 z-40 glass border-b border-white/5 px-4 py-3">
+        <div class="flex justify-between items-center">
+            <a href="index.html" class="flex items-center gap-2">
+                <i class="fab fa-soundcloud text-2xl sc-orange"></i>
+                <span class="text-sm font-black tracking-tighter">JAY MUSIC</span>
+            </a>
+            <button onclick="toggleMobileMenu()" class="touch-target flex items-center justify-center w-10 h-10 rounded-lg bg-white/5">
+                <i class="fas fa-bars text-lg"></i>
+            </button>
+        </div>
+        <div id="mobileMenu" class="hidden absolute top-full left-0 right-0 glass border-b border-white/5 mt-1 rounded-b-2xl overflow-hidden">
+            <div class="flex flex-col p-4 gap-3">
+                <a href="index.html" class="text-sm font-bold py-2 px-4 rounded-lg hover:bg-white/5 transition-colors">Home</a>
+                <a href="search.html" class="text-sm font-bold py-2 px-4 rounded-lg hover:bg-white/5 transition-colors">Search</a>
+                <a href="library.html" class="text-sm font-bold py-2 px-4 rounded-lg hover:bg-white/5 transition-colors">Library</a>
+                <a href="playlist.html" class="text-sm font-bold py-2 px-4 rounded-lg bg-white/10 text-white">Playlists</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="max-w-5xl mx-auto p-6 md:p-10 pt-20 md:pt-6">
+        <header class="desktop-nav flex justify-between items-center mb-12">
+            <a href="index.html" class="flex items-center gap-3">
+                <i class="fab fa-soundcloud text-4xl sc-orange"></i>
+                <span class="text-xl font-black tracking-tighter">JAY MUSIC</span>
+            </a>
+            <nav class="flex gap-6 text-xs font-bold uppercase tracking-widest text-gray-500">
+                <a href="index.html" class="hover:text-white transition-colors">Home</a>
+                <a href="search.html" class="hover:text-white transition-colors">Search</a>
+                <a href="library.html" class="hover:text-white transition-colors">Library</a>
+                <a href="playlist.html" class="text-white">Playlists</a>
+            </nav>
+        </header>
+
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 md:mb-12">
+            <h2 class="text-3xl sm:text-5xl font-black tracking-tighter uppercase">Your <span class="sc-orange">Playlists</span></h2>
+            <button onclick="showCreateModal()" class="touch-target bg-white text-black font-black px-6 sm:px-8 py-3 rounded-full text-xs hover:scale-105 transition-transform shadow-lg">
+                <i class="fas fa-plus mr-2"></i>CREATE NEW
+            </button>
+        </div>
+        
+        <div id="playlistContent" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+            <div class="flex items-center justify-center py-20 col-span-full">
+                <div class="spinner mr-3"></div>
+                <span class="text-xs text-gray-500 font-bold uppercase tracking-widest">Loading playlists...</span>
+            </div>
+        </div>
+
+        <!-- Songs in Playlist View -->
+        <div id="songsView" class="hidden mt-8 md:mt-16">
+            <div class="flex items-center gap-4 md:gap-6 mb-6 md:mb-8">
+                <button onclick="hideSongsView()" class="touch-target flex items-center justify-center text-gray-500 hover:text-white transition-colors">
+                    <i class="fas fa-chevron-left text-xl md:text-2xl"></i>
+                </button>
+                <h3 id="currentPlaylistName" class="text-xl sm:text-3xl font-black tracking-tight truncate flex-1"></h3>
+                <button onclick="deleteCurrentPlaylist()" class="touch-target text-red-500 hover:text-red-400 transition-colors text-sm">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+            </div>
+            <div id="songsList" class="grid grid-cols-1 gap-3">
+                <!-- Songs will be listed here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Playlist Modal -->
+    <div id="createModal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-4 modal-overlay">
+        <div class="glass p-6 md:p-8 rounded-3xl w-full max-w-sm border border-white/10 shadow-2xl fade-in">
+            <h3 class="text-xl md:text-2xl font-black mb-6 tracking-tight">Create New Playlist</h3>
+            <input type="text" id="playlistNameInput" placeholder="Enter playlist name..." 
+                class="modal-input w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 mb-4 focus:outline-none transition-all text-sm font-medium"
+                onkeypress="if(event.key==='Enter') createPlaylistFromModal()">
+            <div class="flex gap-3">
+                <button onclick="closeCreateModal()" class="flex-1 touch-target bg-white/5 hover:bg-white/10 text-white font-bold py-3 rounded-xl transition-all text-sm">Cancel</button>
+                <button onclick="createPlaylistFromModal()" id="createPlaylistBtn" class="flex-1 touch-target sc-bg-orange text-white font-bold py-3 rounded-xl transition-all text-sm">Create</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast hidden"></div>
+
+    <!-- Global Player Bar -->
+    <div id="playerBar" class="fixed bottom-0 left-0 right-0 glass p-3 md:p-6 border-t border-white/5 z-50 transform translate-y-full transition-transform duration-500">
+        <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center gap-4 md:gap-6">
+            <div class="flex items-center gap-3 md:gap-4 w-full md:w-1/3">
+                <img id="playerThumb" src="" class="w-12 h-12 md:w-14 md:h-14 rounded-xl shadow-2xl bg-gray-800 object-cover">
+                <div class="overflow-hidden">
+                    <h4 id="playerTitle" class="font-black text-xs md:text-sm truncate"></h4>
+                    <p id="playerAuthor" class="text-[9px] md:text-[10px] text-gray-500 font-bold uppercase truncate"></p>
+                </div>
+            </div>
+            <div class="w-full md:w-2/3 flex items-center gap-3 md:gap-4">
+                <audio id="audioPlayer" controls class="flex-1 h-9 md:h-10 w-full"></audio>
+                <button onclick="closePlayer()" class="touch-target text-gray-600 hover:text-white"><i class="fas fa-times-circle text-lg md:text-xl"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyBztF3TJ_2YSkZDNA8XgiQByQ_8NZCl644",
+            authDomain: "mp3-and-users.firebaseapp.com",
+            projectId: "mp3-and-users",
+            storageBucket: "mp3-and-users.firebasestorage.app",
+            messagingSenderId: "515605875722",
+            appId: "1:515605875722:web:324bfb4a2843d972f8e3f3"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const API_BASE_URL = window.location.origin;
+        let currentUser = null;
+        let currentPlaylistId = null;
+        let currentPlaylistName = null;
+        let currentPlaylistSongs = []; // Store songs data globally
+
+        function showToast(message, isError = false) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = `toast fade-in ${isError ? 'bg-red-500/20 text-red-300 border border-red-500/30' : 'bg-green-500/20 text-green-300 border border-green-500/30'}`;
+            setTimeout(() => { toast.classList.add('hidden'); }, 3000);
+        }
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                window.location.href = 'login.html';
+            } else {
+                currentUser = user;
+                loadPlaylists();
+            }
+        });
+
+        async function loadPlaylists() {
+            try {
+                const idToken = await currentUser.getIdToken();
+                const response = await fetch(`${API_BASE_URL}/api/user/playlists?t=${Date.now()}`, {
+                    headers: { 'Authorization': `Bearer ${idToken}` },
+                    cache: 'no-store'
+                });
+                
+                if (!response.ok) throw new Error(`Server error: ${response.status}`);
+                
+                const playlists = await response.json();
+                console.log('Playlists loaded:', playlists);
+                
+                const container = document.getElementById('playlistContent');
+                
+                if (playlists.length > 0) {
+                    container.innerHTML = '';
+                    playlists.forEach((pl, index) => {
+                        const songCount = pl.songCount || 0;
+                        const card = document.createElement('div');
+                        card.className = 'glass p-4 md:p-6 rounded-3xl aspect-square flex flex-col justify-center items-center gap-3 md:gap-4 hover:bg-white/5 transition-all cursor-pointer group playlist-card fade-in';
+                        card.onclick = () => showSongsView(pl.id, pl.name);
+                        card.innerHTML = `
+                            <div class="w-16 h-16 md:w-20 md:h-20 bg-gray-800 rounded-2xl flex items-center justify-center group-hover:bg-orange-500 transition-colors">
+                                <i class="fas fa-compact-disc text-2xl md:text-3xl text-gray-600 group-hover:text-white"></i>
+                            </div>
+                            <h4 class="font-black text-center tracking-tight text-xs md:text-sm truncate w-full">${pl.name}</h4>
+                            <p class="text-[9px] md:text-[10px] font-bold text-gray-500 uppercase tracking-widest">${songCount} Songs</p>
+                        `;
+                        container.appendChild(card);
+                    });
+                } else {
+                    container.innerHTML = '<p class="text-gray-700 font-bold uppercase tracking-widest text-xs py-20 text-center col-span-full">You haven\'t created any playlists yet.</p>';
+                }
+            } catch (error) {
+                console.error("Load playlists error:", error);
+                showToast('Failed to load playlists', true);
+                document.getElementById('playlistContent').innerHTML = `
+                    <div class="flex flex-col items-center justify-center py-20 col-span-full">
+                        <i class="fas fa-exclamation-triangle text-3xl text-red-400 mb-4"></i>
+                        <p class="text-red-400 font-bold uppercase tracking-widest text-xs">Failed to load playlists</p>
+                        <button onclick="loadPlaylists()" class="mt-4 touch-target bg-white/5 px-6 py-2 rounded-lg text-xs font-bold">Retry</button>
+                    </div>`;
+            }
+        }
+
+        // Create playlist via modal
+        window.showCreateModal = () => {
+            document.getElementById('createModal').classList.remove('hidden');
+            setTimeout(() => document.getElementById('playlistNameInput').focus(), 100);
+        };
+
+        window.closeCreateModal = () => {
+            document.getElementById('createModal').classList.add('hidden');
+            document.getElementById('playlistNameInput').value = '';
+        };
+
+        window.createPlaylistFromModal = async () => {
+            const name = document.getElementById('playlistNameInput').value.trim();
+            
+            if (!name) {
+                showToast('Please enter a playlist name', true);
+                return;
+            }
+            
+            const btn = document.getElementById('createPlaylistBtn');
+            btn.innerHTML = '<div class="spinner mr-2"></div> Creating...';
+            btn.disabled = true;
+            
+            try {
+                const idToken = await currentUser.getIdToken();
+                const response = await fetch(`${API_BASE_URL}/api/user/playlists/create`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json', 
+                        'Authorization': `Bearer ${idToken}` 
+                    },
+                    body: JSON.stringify({ name })
+                });
+                
+                const data = await response.json();
+                console.log('Create playlist response:', data);
+                
+                if (!response.ok || !data.success) {
+                    throw new Error(data.error || 'Failed to create playlist');
+                }
+                
+                showToast('Playlist created!');
+                closeCreateModal();
+                await loadPlaylists();
+            } catch (error) {
+                console.error("Create playlist error:", error);
+                showToast('Failed: ' + error.message, true);
+                btn.innerHTML = 'Create';
+                btn.disabled = false;
+            }
+        };
+
+        // Show songs in a playlist
+        window.showSongsView = async (playlistId, playlistName) => {
+            currentPlaylistId = playlistId;
+            currentPlaylistName = playlistName;
+            
+            document.getElementById('playlistContent').classList.add('hidden');
+            document.getElementById('songsView').classList.remove('hidden');
+            document.getElementById('currentPlaylistName').innerText = playlistName;
+            
+            const list = document.getElementById('songsList');
+            list.innerHTML = '<div class="flex items-center justify-center py-12"><div class="spinner mr-3"></div><span class="text-xs text-gray-500 font-bold uppercase">Loading songs...</span></div>';
+
+            try {
+                const idToken = await currentUser.getIdToken();
+                const response = await fetch(`${API_BASE_URL}/api/user/playlists/${playlistId}/songs?t=${Date.now()}`, {
+                    headers: { 'Authorization': `Bearer ${idToken}` },
+                    cache: 'no-store'
+                });
+                
+                if (!response.ok) throw new Error('Failed to load songs');
+                
+                const data = await response.json();
+                const songs = data.songs || [];
+                currentPlaylistSongs = songs;
+
+                if (songs.length > 0) {
+                    list.innerHTML = '';
+                    songs.forEach((song, index) => {
+                        const row = document.createElement('div');
+                        row.className = 'glass p-3 md:p-4 rounded-2xl flex items-center gap-3 md:gap-4 hover:bg-white/5 transition-colors fade-in';
+                        
+                        // Play button
+                        const playBtn = document.createElement('button');
+                        playBtn.className = 'touch-target flex items-center justify-center text-orange-500 hover:text-orange-400 flex-shrink-0 w-10 h-10';
+                        playBtn.innerHTML = '<i class="fas fa-play"></i>';
+                        playBtn.onclick = () => playTrack(song.streamUrl);
+                        
+                        // Thumbnail
+                        const thumb = document.createElement('div');
+                        thumb.className = 'w-10 h-10 md:w-12 md:h-12 rounded-xl bg-gray-800 flex-shrink-0 overflow-hidden';
+                        if (song.artwork) {
+                            thumb.innerHTML = `<img src="${song.artwork}" class="w-full h-full object-cover" loading="lazy">`;
+                        } else {
+                            thumb.innerHTML = '<div class="w-full h-full flex items-center justify-center"><i class="fas fa-music text-gray-600"></i></div>';
+                        }
+                        
+                        // Info
+                        const info = document.createElement('div');
+                        info.className = 'flex-1 overflow-hidden';
+                        info.innerHTML = `
+                            <h4 class="font-black text-xs md:text-sm truncate">${song.title || 'Unknown'}</h4>
+                            <p class="text-[9px] md:text-[10px] text-gray-500 font-bold uppercase truncate">${song.artist || 'Jay SoundCloud'}</p>
+                        `;
+                        
+                        // Remove button
+                        const removeBtn = document.createElement('button');
+                        removeBtn.className = 'touch-target text-gray-600 hover:text-red-500 transition-colors flex-shrink-0 w-8 h-8 flex items-center justify-center';
+                        removeBtn.innerHTML = '<i class="fas fa-times"></i>';
+                        removeBtn.onclick = () => removeSong(song.songId);
+                        
+                        row.appendChild(playBtn);
+                        row.appendChild(thumb);
+                        row.appendChild(info);
+                        row.appendChild(removeBtn);
+                        list.appendChild(row);
+                    });
+                } else {
+                    list.innerHTML = '<p class="text-gray-700 font-bold uppercase tracking-widest text-xs py-20 text-center">This playlist is empty. Go to Search to add songs!</p>';
+                }
+            } catch (error) {
+                console.error("Load songs error:", error);
+                list.innerHTML = '<p class="text-red-400 font-bold uppercase tracking-widest text-xs py-20 text-center">Failed to load songs.</p>';
+            }
+        };
+
+        window.hideSongsView = () => {
+            document.getElementById('playlistContent').classList.remove('hidden');
+            document.getElementById('songsView').classList.add('hidden');
+            currentPlaylistId = null;
+            currentPlaylistName = null;
+            currentPlaylistSongs = [];
+        };
+
+        window.removeSong = async (songId) => {
+            if (!currentPlaylistId || !songId) return;
+            try {
+                const idToken = await currentUser.getIdToken();
+                const response = await fetch(`${API_BASE_URL}/api/user/playlists/remove-song`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json', 
+                        'Authorization': `Bearer ${idToken}` 
+                    },
+                    body: JSON.stringify({ playlistId: currentPlaylistId, songId })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    showToast('Song removed');
+                    showSongsView(currentPlaylistId, currentPlaylistName);
+                } else {
+                    showToast('Failed to remove song', true);
+                }
+            } catch (error) {
+                console.error("Remove song error:", error);
+                showToast('Error removing song', true);
+            }
+        };
+
+        window.deleteCurrentPlaylist = async () => {
+            if (!currentPlaylistId) return;
+            if (!confirm('Delete this playlist and all its songs?')) return;
+            try {
+                const idToken = await currentUser.getIdToken();
+                const response = await fetch(`${API_BASE_URL}/api/user/playlists/${currentPlaylistId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${idToken}` }
+                });
+                const data = await response.json();
+                if (data.success) {
+                    showToast('Playlist deleted');
+                    hideSongsView();
+                    await loadPlaylists();
+                } else {
+                    showToast('Failed to delete playlist', true);
+                }
+            } catch (error) {
+                console.error("Delete playlist error:", error);
+                showToast('Error deleting playlist', true);
+            }
+        };
+
+        window.playTrack = async (url) => {
+            if (!url) return;
+            const playerBar = document.getElementById('playerBar');
+            const audioPlayer = document.getElementById('audioPlayer');
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/download?link=${encodeURIComponent(url)}`);
+                const data = await response.json();
+                if (data.success && data.result) {
+                    const track = data.result;
+                    document.getElementById('playerThumb').src = track.thumbnail || 'https://via.placeholder.com/150';
+                    document.getElementById('playerTitle').innerText = track.title;
+                    document.getElementById('playerAuthor').innerText = track.author || 'Jay SoundCloud';
+                    audioPlayer.src = track.downloadUrl;
+                    playerBar.classList.remove('translate-y-full');
+                    audioPlayer.play();
+                }
+            } catch (err) {
+                console.error("Play track error:", err);
+            }
+        };
+
+        window.closePlayer = () => {
+            document.getElementById('playerBar').classList.add('translate-y-full');
+            document.getElementById('audioPlayer').pause();
+        };
+
+        window.toggleMobileMenu = () => {
+            document.getElementById('mobileMenu').classList.toggle('hidden');
+        };
+
+        document.addEventListener('click', (e) => {
+            const menu = document.getElementById('mobileMenu');
+            if (!e.target.closest('.mobile-nav') && !menu.classList.contains('hidden')) {
+                menu.classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
