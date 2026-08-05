@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Library - Jay SoundCloud</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { background: #0f0f0f; color: #ffffff; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.05); }
+        .sc-orange { color: #ff5500; }
+        .sc-bg-orange { background-color: #ff5500; }
+        .track-card:hover { background: rgba(255, 255, 255, 0.07); transform: translateY(-2px); }
+        
+        .mobile-nav { display: none; }
+        @media (max-width: 768px) {
+            .desktop-nav { display: none !important; }
+            .mobile-nav { display: flex; }
+        }
+        
+        .touch-target { min-height: 44px; min-width: 44px; }
+        .fade-in { animation: fadeIn 0.3s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="min-h-screen pb-24 md:pb-32">
+    <!-- Mobile Header -->
+    <div class="mobile-nav fixed top-0 left-0 right-0 z-40 glass border-b border-white/5 px-4 py-3">
+        <div class="flex justify-between items-center">
+            <a href="index.html" class="flex items-center gap-2">
+                <i class="fab fa-soundcloud text-2xl sc-orange"></i>
+                <span class="text-sm font-black tracking-tighter">JAY MUSIC</span>
+            </a>
+            <button onclick="toggleMobileMenu()" class="touch-target flex items-center justify-center w-10 h-10 rounded-lg bg-white/5">
+                <i class="fas fa-bars text-lg"></i>
+            </button>
+        </div>
+        <div id="mobileMenu" class="hidden absolute top-full left-0 right-0 glass border-b border-white/5 mt-1 rounded-b-2xl overflow-hidden">
+            <div class="flex flex-col p-4 gap-3">
+                <a href="index.html" class="text-sm font-bold py-2 px-4 rounded-lg hover:bg-white/5 transition-colors">Home</a>
+                <a href="search.html" class="text-sm font-bold py-2 px-4 rounded-lg hover:bg-white/5 transition-colors">Search</a>
+                <a href="library.html" class="text-sm font-bold py-2 px-4 rounded-lg bg-white/10 text-white">Library</a>
+                <a href="playlist.html" class="text-sm font-bold py-2 px-4 rounded-lg hover:bg-white/5 transition-colors">Playlists</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-5xl mx-auto p-6 md:p-10 pt-20 md:pt-10">
+        <header class="desktop-nav flex justify-between items-center mb-8 md:mb-12">
+            <a href="index.html" class="flex items-center gap-3">
+                <i class="fab fa-soundcloud text-4xl sc-orange"></i>
+                <span class="text-xl font-black tracking-tighter">JAY MUSIC</span>
+            </a>
+            <nav class="flex gap-6 text-xs font-bold uppercase tracking-widest text-gray-500">
+                <a href="index.html" class="hover:text-white transition-colors">Home</a>
+                <a href="search.html" class="hover:text-white transition-colors">Search</a>
+                <a href="library.html" class="text-white">Library</a>
+                <a href="playlist.html" class="hover:text-white transition-colors">Playlists</a>
+            </nav>
+        </header>
+
+        <h2 class="text-3xl sm:text-5xl font-black mb-8 md:mb-12 tracking-tighter uppercase">Your <span class="sc-orange">Library</span></h2>
+        
+        <div id="libraryContent" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+            <p class="text-gray-500 font-bold uppercase tracking-widest text-xs py-20 text-center col-span-full">Loading your music...</p>
+        </div>
+    </div>
+
+    <!-- Global Player Bar -->
+    <div id="playerBar" class="fixed bottom-0 left-0 right-0 glass p-3 md:p-6 border-t border-white/5 z-50 transform translate-y-full transition-transform duration-500">
+        <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center gap-4 md:gap-6">
+            <div class="flex items-center gap-3 md:gap-4 w-full md:w-1/3">
+                <img id="playerThumb" src="" class="w-12 h-12 md:w-14 md:h-14 rounded-xl shadow-2xl bg-gray-800 object-cover flex-shrink-0">
+                <div class="overflow-hidden">
+                    <h4 id="playerTitle" class="font-black text-xs md:text-sm truncate"></h4>
+                    <p id="playerAuthor" class="text-[9px] md:text-[10px] text-gray-500 font-bold uppercase truncate"></p>
+                </div>
+            </div>
+            <div class="w-full md:w-2/3 flex items-center gap-3 md:gap-4">
+                <audio id="audioPlayer" controls class="flex-1 h-9 md:h-10 w-full"></audio>
+                <button onclick="closePlayer()" class="touch-target text-gray-600 hover:text-white flex-shrink-0"><i class="fas fa-times-circle text-lg md:text-xl"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyBztF3TJ_2YSkZDNA8XgiQByQ_8NZCl644",
+            authDomain: "mp3-and-users.firebaseapp.com",
+            projectId: "mp3-and-users",
+            storageBucket: "mp3-and-users.firebasestorage.app",
+            messagingSenderId: "515605875722",
+            appId: "1:515605875722:web:324bfb4a2843d972f8e3f3"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const API_BASE_URL = window.location.origin;
+        let currentUser = null;
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) window.location.href = 'login.html';
+            else {
+                currentUser = user;
+                loadLibrary();
+            }
+        });
+
+        async function loadLibrary() {
+            try {
+                const idToken = await currentUser.getIdToken();
+                const response = await fetch(`${API_BASE_URL}/api/user/recentlyPlayed`, {
+                    headers: { 'Authorization': `Bearer ${idToken}` }
+                });
+                const data = await response.json();
+                const container = document.getElementById('libraryContent');
+                
+                if (data.length > 0) {
+                    container.innerHTML = data.map(track => `
+                        <div class="glass p-4 md:p-5 rounded-2xl track-card group transition-all duration-300 cursor-pointer fade-in" onclick="playTrack('${track.url}')">
+                            <div class="aspect-square bg-gray-800 rounded-xl mb-3 md:mb-4 overflow-hidden relative">
+                                <img src="${track.thumbnail || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=400'}" class="w-full h-full object-cover opacity-40 group-hover:opacity-100 transition-opacity">
+                                <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <i class="fas fa-play-circle text-4xl md:text-5xl text-orange-500 shadow-2xl"></i>
+                                </div>
+                            </div>
+                            <h4 class="font-black text-xs md:text-sm truncate mb-1">${track.title}</h4>
+                            <p class="text-[9px] md:text-[10px] text-gray-500 font-bold uppercase truncate">${track.author || 'Jay SoundCloud'}</p>
+                        </div>
+                    `).join('');
+                } else {
+                    container.innerHTML = '<p class="text-gray-700 font-bold uppercase tracking-widest text-xs py-20 text-center col-span-full">Your library is empty. Start searching!</p>';
+                }
+            } catch (err) {
+                console.error("Load library error:", err);
+            }
+        }
+
+        window.playTrack = async (url) => {
+            if (!url) return;
+            const playerBar = document.getElementById('playerBar');
+            const audioPlayer = document.getElementById('audioPlayer');
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/download?link=${encodeURIComponent(url)}`);
+                const data = await response.json();
+                if (data.success && data.result) {
+                    const track = data.result;
+                    document.getElementById('playerThumb').src = track.thumbnail || 'https://via.placeholder.com/150';
+                    document.getElementById('playerTitle').innerText = track.title;
+                    document.getElementById('playerAuthor').innerText = track.author || 'Jay SoundCloud';
+                    audioPlayer.src = track.downloadUrl;
+                    playerBar.classList.remove('translate-y-full');
+                    audioPlayer.play();
+                }
+            } catch (err) {
+                console.error("Play error:", err);
+            }
+        };
+
+        window.closePlayer = () => {
+            document.getElementById('playerBar').classList.add('translate-y-full');
+            document.getElementById('audioPlayer').pause();
+        };
+
+        window.toggleMobileMenu = () => {
+            document.getElementById('mobileMenu').classList.toggle('hidden');
+        };
+
+        document.addEventListener('click', (e) => {
+            const menu = document.getElementById('mobileMenu');
+            if (!e.target.closest('.mobile-nav') && !menu.classList.contains('hidden')) {
+                menu.classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
