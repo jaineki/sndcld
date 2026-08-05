@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Jay SoundCloud - Premium Music</title>
+    
+    <!-- PWA Meta Tags -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#ff5500">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Jay Music">
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512x512.png">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { background: #0f0f0f; color: #ffffff; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.05); }
+        .sc-orange { color: #ff5500; }
+        .sc-bg-orange { background-color: #ff5500; }
+        .hero-gradient { background: linear-gradient(135deg, #ff5500 0%, #ff2200 100%); }
+        .nav-link:hover { color: #ff5500; }
+        
+        .mobile-nav { display: none; }
+        @media (max-width: 768px) {
+            .desktop-nav { display: none !important; }
+            .mobile-nav { display: flex; }
+        }
+        
+        .touch-target { min-height: 44px; min-width: 44px; }
+        .fade-in { animation: fadeIn 0.3s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Install prompt */
+        #installBanner { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); z-index: 100; background: #ff5500; color: white; padding: 12px 20px; border-radius: 12px; font-size: 13px; font-weight: 700; display: none; align-items: center; gap: 12px; box-shadow: 0 4px 20px rgba(255,85,0,0.4); }
+    </style>
+</head>
+<body class="min-h-screen">
+    <!-- Mobile Header -->
+    <div class="mobile-nav fixed top-0 left-0 right-0 z-40 glass border-b border-white/5 px-4 py-3">
+        <div class="flex justify-between items-center">
+            <a href="index.html" class="flex items-center gap-2">
+                <i class="fab fa-soundcloud text-2xl sc-orange"></i>
+                <span class="text-sm font-black tracking-tighter">JAY MUSIC</span>
+            </a>
+            <button onclick="toggleMobileMenu()" class="touch-target flex items-center justify-center w-10 h-10 rounded-lg bg-white/5">
+                <i class="fas fa-bars text-lg"></i>
+            </button>
+        </div>
+        <div id="mobileMenu" class="hidden absolute top-full left-0 right-0 glass border-b border-white/5 mt-1 rounded-b-2xl overflow-hidden">
+            <div class="flex flex-col p-4 gap-3">
+                <a href="index.html" class="text-sm font-bold py-2 px-4 rounded-lg bg-white/10 text-white">Home</a>
+                <a href="search.html" class="text-sm font-bold py-2 px-4 rounded-lg hover:bg-white/5 transition-colors">Search</a>
+                <a href="library.html" class="text-sm font-bold py-2 px-4 rounded-lg hover:bg-white/5 transition-colors">Library</a>
+                <a href="playlist.html" class="text-sm font-bold py-2 px-4 rounded-lg hover:bg-white/5 transition-colors">Playlists</a>
+                <button onclick="handleLogout()" class="text-sm font-bold py-2 px-4 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors">Logout</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-6xl mx-auto p-6 md:p-10 pt-20 md:pt-6">
+        <header class="desktop-nav flex justify-between items-center mb-16">
+            <div class="flex items-center gap-3">
+                <i class="fab fa-soundcloud text-4xl sc-orange"></i>
+                <span class="text-xl font-black tracking-tighter">JAY MUSIC</span>
+            </div>
+            <nav class="flex gap-8 text-xs font-bold uppercase tracking-widest text-gray-500 items-center">
+                <a href="index.html" class="text-white nav-link">Home</a>
+                <a href="search.html" class="nav-link transition-colors">Search</a>
+                <a href="library.html" class="nav-link transition-colors">Library</a>
+                <a href="playlist.html" class="nav-link transition-colors">Playlists</a>
+                <button onclick="handleLogout()" class="bg-white/5 px-4 py-2 rounded-full hover:bg-white/10 transition-colors">Logout</button>
+            </nav>
+        </header>
+
+        <main>
+            <div class="hero-gradient p-8 sm:p-12 md:p-20 rounded-2xl sm:rounded-3xl md:rounded-[40px] mb-10 md:mb-16 relative overflow-hidden shadow-2xl">
+                <div class="relative z-10 max-w-2xl">
+                    <h1 class="text-4xl sm:text-6xl md:text-8xl font-black tracking-tighter mb-4 md:mb-6 leading-none uppercase">Your <br>Music <br>World.</h1>
+                    <p class="text-base sm:text-lg md:text-xl font-medium mb-6 md:mb-10 opacity-90">Unlimited streaming, private collections, and full synchronization. Welcome to Jay SoundCloud.</p>
+                    <div class="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                        <a href="search.html" class="bg-black text-white font-black px-8 sm:px-10 py-4 sm:py-5 rounded-2xl hover:scale-105 transition-transform inline-block shadow-xl text-sm sm:text-base text-center">START SEARCHING</a>
+                        <a href="library.html" class="bg-white/20 backdrop-blur-md text-white font-black px-8 sm:px-10 py-4 sm:py-5 rounded-2xl hover:bg-white/30 transition-all inline-block text-sm sm:text-base text-center">YOUR LIBRARY</a>
+                    </div>
+                </div>
+                <i class="fab fa-soundcloud absolute -right-10 sm:-right-20 -bottom-10 sm:-bottom-20 text-[200px] sm:text-[400px] opacity-10 rotate-12"></i>
+            </div>
+
+            <section class="mb-10 md:mb-16">
+                <div class="flex justify-between items-end mb-6 md:mb-8">
+                    <h2 class="text-xl sm:text-3xl font-black tracking-tight uppercase">Recently Played</h2>
+                    <a href="library.html" class="text-[10px] md:text-xs font-bold text-gray-500 uppercase tracking-widest hover:text-white transition-colors">View Library</a>
+                </div>
+                <div id="recentlyPlayed" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 md:gap-6">
+                    <p class="text-gray-700 font-bold uppercase tracking-widest text-[10px] py-10 text-center col-span-full">Loading...</p>
+                </div>
+            </section>
+
+            <footer class="mt-20 md:mt-32 pt-8 md:pt-12 border-t border-white/5 text-center">
+                <p class="text-gray-600 text-[10px] font-bold uppercase tracking-[0.3em]">Made with ❤️ by <span class="text-gray-400">Jay Bohol</span></p>
+                <div class="flex justify-center gap-6 mt-4 md:mt-6">
+                    <a href="https://www.facebook.com/profile.php?id=61590490534032" target="_blank" class="text-gray-500 hover:text-white transition-colors"><i class="fab fa-facebook text-xl"></i></a>
+                    <a href="https://www.instagram.com/jay_op697/" target="_blank" class="text-gray-500 hover:text-white transition-colors"><i class="fab fa-instagram text-xl"></i></a>
+                </div>
+            </footer>
+        </main>
+    </div>
+
+    <!-- Install Banner -->
+    <div id="installBanner">
+        <i class="fas fa-download"></i>
+        <span>Install Jay Music to your home screen</span>
+        <button onclick="dismissInstall()" class="ml-2 text-white/70 hover:text-white"><i class="fas fa-times"></i></button>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyBztF3TJ_2YSkZDNA8XgiQByQ_8NZCl644",
+            authDomain: "mp3-and-users.firebaseapp.com",
+            projectId: "mp3-and-users",
+            storageBucket: "mp3-and-users.firebasestorage.app",
+            messagingSenderId: "515605875722",
+            appId: "1:515605875722:web:324bfb4a2843d972f8e3f3"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const API_BASE_URL = window.location.origin;
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                window.location.href = 'login.html';
+            } else {
+                const idToken = await user.getIdToken();
+                try {
+                    const response = await fetch(`${API_BASE_URL}/api/user/recentlyPlayed?t=${Date.now()}`, {
+                        headers: { 'Authorization': `Bearer ${idToken}` },
+                        cache: 'no-store'
+                    });
+                    
+                    if (!response.ok) throw new Error(`Server error: ${response.status}`);
+                    
+                    const data = await response.json();
+                    const container = document.getElementById('recentlyPlayed');
+                    
+                    if (Array.isArray(data) && data.length > 0) {
+                        container.innerHTML = data.slice(0, 6).map(track => `
+                            <div class="glass p-3 md:p-4 rounded-2xl hover:bg-white/5 transition-all cursor-pointer group fade-in">
+                                <div class="aspect-square bg-gray-800 rounded-xl mb-3 md:mb-4 overflow-hidden">
+                                    <img src="${track.thumbnail || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=400'}" class="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity" loading="lazy">
+                                </div>
+                                <h4 class="font-black text-[9px] md:text-[10px] truncate mb-1 tracking-tight">${track.title || 'Unknown'}</h4>
+                                <p class="text-[7px] md:text-[8px] text-gray-500 font-bold uppercase truncate tracking-widest">${track.author || 'SoundCloud'}</p>
+                            </div>
+                        `).join('');
+                    } else {
+                        container.innerHTML = '<p class="text-gray-700 font-bold uppercase tracking-widest text-[10px] py-10 text-center col-span-full">No history yet. Play some music!</p>';
+                    }
+                } catch (err) {
+                    console.error("Load history error:", err);
+                    document.getElementById('recentlyPlayed').innerHTML = '<p class="text-red-400 font-bold uppercase tracking-widest text-[10px] py-10 text-center col-span-full">Failed to load history</p>';
+                }
+            }
+        });
+
+        window.handleLogout = () => signOut(auth);
+
+        window.toggleMobileMenu = () => {
+            document.getElementById('mobileMenu').classList.toggle('hidden');
+        };
+
+        document.addEventListener('click', (e) => {
+            const menu = document.getElementById('mobileMenu');
+            if (!e.target.closest('.mobile-nav') && !menu.classList.contains('hidden')) {
+                menu.classList.add('hidden');
+            }
+        });
+
+        // Register Service Worker for PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/pwabuilder-sw.js')
+                    .then(reg => console.log('[Jay Music] SW registered:', reg.scope))
+                    .catch(err => console.log('[Jay Music] SW registration failed:', err));
+            });
+        }
+
+        // PWA Install Prompt
+        let deferredPrompt = null;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            document.getElementById('installBanner').style.display = 'flex';
+        });
+
+        window.dismissInstall = () => {
+            document.getElementById('installBanner').style.display = 'none';
+        };
+    </script>
+</body>
+</html>
