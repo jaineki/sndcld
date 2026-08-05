@@ -1,0 +1,8 @@
+# Express Session Secret
+SESSION_SECRET=7d8d3e4e4d7fdc5a8d9f6e7c1b9a2f4d6c8e1a3b5f7d9c2e4a6b8d1f3e5c7a9
+
+# JWT Secret
+JWT_SECRET=9a4f2d7b8c1e6f3a5d9b7c2e8f1a4d6c9b3e7f5a1d8c4e6b2f9a7d3c5e1f8b6
+
+# External API Key (Extracted from the HTML)
+EXTERNAL_API_KEY=fdv_-ilbx8G4_f0Ix-NuWLD9tQ
