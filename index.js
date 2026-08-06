@@ -64,13 +64,12 @@ const requiredVars = [
     'FIREBASE_PRIVATE_KEY_ID',
     'FIREBASE_PRIVATE_KEY',
     'FIREBASE_CLIENT_EMAIL',
-    'FIREBASE_CLIENT_ID',
-    'EXTERNAL_API_KEY'
+    'FIREBASE_CLIENT_ID'
 ];
 
 const missingVars = requiredVars.filter(v => !process.env[v]);
 if (missingVars.length > 0) {
-    console.error("ERROR: Missing required environment variables:", missingVars.join(', '));
+    console.error("ERROR (v6-fixed): Missing required environment variables:", missingVars.join(', '));
     process.exit(1);
 }
 
