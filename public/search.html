@@ -261,7 +261,7 @@
                         resultsDiv.innerHTML = `
                             <div class="col-span-full py-20 text-center">
                                 <p class="text-gray-500 font-bold uppercase tracking-widest text-xs mb-4">No results found for "${query}"</p>
-                                <p class="text-[10px] text-gray-700 font-medium">Try a different search term or check your API key in Render settings.</p>
+                                <p class="text-[10px] text-gray-700 font-medium">Try a different search term or check your connection.</p>
                             </div>`;
                     }
                 } else {
@@ -270,7 +270,7 @@
                         <div class="col-span-full py-20 text-center">
                             <p class="text-red-400 font-bold uppercase tracking-widest text-xs mb-2">Search Failed</p>
                             <p class="text-[10px] text-gray-600 font-medium">${errorMsg}</p>
-                            <p class="text-[9px] text-gray-700 mt-4 italic">Check your EXTERNAL_API_KEY in Render environment variables.</p>
+                            <p class="text-[9px] text-gray-700 mt-4 italic">Please check your internet connection or try again later.</p>
                         </div>`;
                 }
             } catch (err) {
