@@ -242,7 +242,9 @@
                         resultsDiv.innerHTML = searchResults.map((track, index) => `
                             <div class="glass p-4 md:p-5 rounded-2xl track-card group transition-all duration-300 fade-in">
                                 <div class="aspect-square bg-gray-800 rounded-xl mb-3 md:mb-4 overflow-hidden relative">
-                                    <img src="${track.thumbnail || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=400'}" class="w-full h-full object-cover opacity-40 group-hover:opacity-100 transition-opacity" loading="lazy">
+                                    <div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-800 to-gray-900">
+                                    <i class="fas fa-music text-3xl text-gray-700 group-hover:text-orange-500/50 transition-colors"></i>
+                                </div>
                                     <button onclick="playTrackByIndex(${index})" class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                                         <i class="fas fa-play-circle text-4xl md:text-6xl text-orange-500 shadow-2xl"></i>
                                     </button>
